@@ -32,7 +32,7 @@ const GallerySchema = new mongoose.Schema({
             type: String,
             required: true,
       },
-       caption: {
+      caption: {
             type: String ,
             required: true,
       },
@@ -76,6 +76,17 @@ const TickerSchema = new mongoose.Schema({
             type : String,
       }
 })
+const SlotsSchema = new mongoose.Schema({
+      date: {
+            type: Date,
+            default: Date.now,
+      },
+      slots: {
+            type: Number,
+            default: 20,
+      }
+
+})
 
 
 // Hashing the password
@@ -91,9 +102,10 @@ const Doctor = mongoose.model("DOCTOR", DoctorSchema);
 const Gallery = mongoose.model("GALLERY", GallerySchema);
 const Review = mongoose.model("REVIEW", ReviewSchema);
 const Ticker = mongoose.model("TICKER", TickerSchema);
+const Slot = mongoose.model("SLOTS", SlotsSchema);
 
 module.exports = {
       Doctor,
-      Gallery,Review,Ticker
+      Gallery,Review,Ticker,Slot
 };
 

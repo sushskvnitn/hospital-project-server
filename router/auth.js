@@ -3,8 +3,8 @@ const router = express.Router();
 const app = express();
 app.use(express.json());
 const bcrypt = require("bcrypt");
-const {Doctor , Gallery , Review ,Ticker }  = require("../schema/userschema");
-const multer = require("multer");
+const {Doctor , Gallery , Review ,Ticker,Slot }  = require("../schema/userschema");
+
 router.get("/doctors", (req, res) => {
     try {
         Doctor.find({}, (err, doctors) => {
@@ -103,19 +103,10 @@ if ( !username ||!email || !password) {
     console.log(error);
   }
 })
-const storage = multer.diskStorage({  
-  destination: function (req, file, cb) {
-    cb(null, 'public/images');
-  },
-  filename: function (req, file, cb) { 
-    cb(null,  Date.now()+file.originalname);
-  }
-})
-const upload = multer({ storage  })
 
-router.post('/addphoto',upload.single('Name') ,async (req, res) => {
-  let photo = (req.file) ? req.file.filename : null;
-  const { title, caption} = req.body;
+
+router.post('/addphoto' ,async (req, res) => {
+  const { title, caption,photo} = req.body;
   if ( !title || !caption ) {
     res.status(400).json({ msg: "Please fill all the fields" });
   }
@@ -173,6 +164,49 @@ router.get('/gallery',async (req, res) => {
     console.log(error);
   }
 })
+
+router.post("/addslots", async (req, res) => {
+  const { date, slots } = req.body;
+  try {
+    const data = new Slot({ 
+      date,
+      slots,
+     }); 
+    const res = await data.save();
+     res.send( "Slots created successfully" );
+  } catch (error) {
+    console.log(error);
+  }
+});
+router.get("/getslots", async (req, res) => {
+  try {
+    Slot.find({}, (err, slots) => {
+      if (err) {
+        throw err;
+      }
+      res.send(slots);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+});
+router.put("/decreaseslots", async (req, res) => {
+  const { _id, slots } = req.body;
+  try {
+    const data = await Slot.findOne({ _id: _id});
+    if(data){
+      const newslots = slots;
+      const res = await Slot.updateOne({ _id: _id }, { $set: { slots: newslots } });
+      res.send( "Slots updated successfully" );
+    } else {
+      res.status(400).json({ msg: "Slots not found" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
 
 
 
