@@ -1,5 +1,7 @@
 const express = require('express')
+const cookieParser = require('cookie-parser')
 const app = express();
+app.use(cookieParser())
 const dotenv =require("dotenv");
 dotenv.config({path: './config.env'});
 const PORT = process.env.PORT || 8000;

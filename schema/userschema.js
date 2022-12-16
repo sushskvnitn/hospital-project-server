@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const DoctorSchema = new mongoose.Schema({
       name: {
@@ -18,7 +19,10 @@ const DoctorSchema = new mongoose.Schema({
       cpassword: {
             type: String,
             required: true,
-      }
+      },
+      tokens:[{
+            token :{ type: String, required: true}
+       }]
 });
 
 const GallerySchema = new mongoose.Schema({
@@ -40,7 +44,8 @@ const GallerySchema = new mongoose.Schema({
             type: Date,
             default: Date.now,
             required: true,
-      }
+      },
+    
 });
 
 const ReviewSchema = new mongoose.Schema({
@@ -97,6 +102,16 @@ DoctorSchema.pre("save", async function (next) {
       }
       next();
 });
+DoctorSchema.methods.generateAuthToken=async function(){
+      try {
+        let tokengenerated  = jwt.sign({_id:this._id},process.env.JWT_KEY)
+          this.tokens = this.tokens.concat({token:tokengenerated});
+         await this.save();
+         return tokengenerated;
+      } catch (error) {
+        console.log(error);
+      }
+    }
 
 const Doctor = mongoose.model("DOCTOR", DoctorSchema);
 const Gallery = mongoose.model("GALLERY", GallerySchema);

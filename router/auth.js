@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const authenticate = require("../middleware/authenticate");
+const multer = require("multer")
 const app = express();
 app.use(express.json());
 const bcrypt = require("bcrypt");
@@ -47,9 +49,7 @@ router.get("/getticker", (req, res) => {
     }
 });
 
-router.get("/signup", (req, res) => {
-  res.send("hello world from signup");
-});
+
 
 router.post("/register", async (req, res) => {
   const { name, email, password, cpassword } = req.body;
@@ -81,32 +81,40 @@ router.post('/login',async (req, res) => {
   try {
 const{ username,email,password}= req.body;
 if ( !username ||!email || !password) {
-    return res
-      .status(422)
-      .json({ error: "make sure all fields are filled up " });
+    return res.status(422).json({ error: "make sure all fields are filled up " });
   }
       //here User is from user schema 
     const userlogin= await Doctor.findOne({ email: email,name:username });
-    // console.log(req.body);
-        //password is from the user and userlogin.password() is from database     
-    if(userlogin){
-        const isMatch = await bcrypt.compare(password, userlogin.password)
-        if(!isMatch) {
-        res.status(400).json({ error: "invalid credentials in ismatch" });
-    }else{
-         res.status(201).json({ success: "user login  successfully " });
+    if (!userlogin) {
+      return res.status(400).json({ msg: "User does not exist" });
     }
-    }else{
-        res.status(400).json({ error: "invalid credentials" });
+        // password is from the user and userlogin.password() is from database     
+    const isMatch = await bcrypt.compare(password, userlogin.password);
+    const token = await userlogin.generateAuthToken();
+    res.cookie("jwtoken", token, {
+      expires: new Date(Date.now() + 7200000),
+      httpOnly: true,
+    });
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
     }
+    res.status(201).json({ msg: "User login successfully" });
   } catch (error) {
     console.log(error);
   }
 })
-
-
-router.post('/addphoto' ,async (req, res) => {
-  const { title, caption,photo} = req.body;
+const storage = multer.diskStorage({  
+  destination: function (req, file, cb) {
+    cb(null, 'public/images');
+  },
+  filename: function (req, file, cb) { 
+    cb(null,  Date.now()+file.originalname);
+  }
+})
+const upload = multer({ storage  })
+router.post('/addphoto',upload.single('Name') ,async (req, res) => {
+  let photo = (req.file) ? req.file.filename : null;
+  const { title, caption} = req.body;
   if ( !title || !caption ) {
     res.status(400).json({ msg: "Please fill all the fields" });
   }
@@ -117,8 +125,9 @@ router.post('/addphoto' ,async (req, res) => {
       caption,
     });
     console.log(data);
-    const res = await data.save();
+     await data.save();
     res.json({ success: "image uploaded successfully" });
+    window.alert("image uploaded successfully");
 
   } catch (error) {
     console.log(error);
@@ -137,8 +146,8 @@ router.post('/addreview' ,async (req, res) => {
       name,
       rating
     });
-    const res = await data.save();
-    res.json({ success: "image uploaded successfully" });
+     data.save();
+    res.status(200).json({ success: "image uploaded successfully" });
 
   } catch (error) {
     console.log(error);
@@ -196,7 +205,7 @@ router.put("/decreaseslots", async (req, res) => {
     const data = await Slot.findOne({ _id: _id});
     if(data){
       const newslots = slots;
-      const res = await Slot.updateOne({ _id: _id }, { $set: { slots: newslots } });
+      await Slot.updateOne({ _id: _id }, { $set: { slots: newslots } });
       res.send( "Slots updated successfully" );
     } else {
       res.status(400).json({ msg: "Slots not found" });
@@ -205,10 +214,8 @@ router.put("/decreaseslots", async (req, res) => {
     console.log(error);
   }
 });
-
-
-
-
-
+router.get("/doctorinfo",authenticate , (req, res) => {
+  res.send(req.user);
+});
 
 module.exports = router;
