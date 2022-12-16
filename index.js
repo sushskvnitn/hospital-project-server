@@ -5,7 +5,7 @@ app.use(cookieParser())
 const dotenv =require("dotenv");
 dotenv.config({path: './config.env'});
 const PORT = process.env.PORT || 8000;
-
+app.use(express.static('static'));
 require("./schema/userschema");
 require('./db/connect');
 app.use("/public", express.static('public'));
